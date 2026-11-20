@@ -35,7 +35,7 @@ export default function CreateAjoFlow({ onClose, onCreated }: CreateAjoFlowProps
     setLoading(true);
     const amountValue = Number(amount);
     const id = `${groupName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
-    const group: AjoGroup = { id, name: groupName.trim(), amount: `₦${amountValue.toLocaleString('en-NG')}`, amountValue, members: '1 / 10', round: '1 of 10', date: 'To be scheduled', color: 'teal', position: '1st', schedule, protectionReserve: amountValue, creator: 'Amaka Mensah', status: 'Accepting participants', inviteLink: `${window.location.origin}/?group=${id}`, payoutAmount: 0, payoutStatus: 'not-ready', payoutRecipient: 'Amaka Mensah' };
+    const group: AjoGroup = { id, name: groupName.trim(), amount: `₦${amountValue.toLocaleString('en-NG')}`, amountValue, members: '1 / 10', round: '1 of 10', date: 'To be scheduled', color: 'teal', position: '1st', schedule, protectionReserve: amountValue, creator: 'Jessica Mensah', status: 'Accepting participants', inviteLink: `${window.location.origin}/?group=${id}`, payoutAmount: 0, payoutStatus: 'not-ready', payoutRecipient: 'Jessica Mensah' };
     window.setTimeout(() => onCreated(group), 650);
   };
 
