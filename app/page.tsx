@@ -56,27 +56,18 @@ const holdings = [
 ];
 
 const lessons = [
-  {
-    title: 'What are stocks?',
-    category: 'Investing basics',
-    time: '5 min read',
-    level: 'Beginner',
-    tone: 'lesson-coral',
-  },
-  {
-    title: 'Build your emergency fund',
-    category: 'Personal finance',
-    time: '7 min read',
-    level: 'Beginner',
-    tone: 'lesson-blue',
-  },
-  {
-    title: 'The power of diversification',
-    category: 'Risk management',
-    time: '6 min read',
-    level: 'Intermediate',
-    tone: 'lesson-green',
-  },
+  { title: 'The 50/30/20 Rule', description: 'Learn how to divide income between needs, wants and savings.', category: 'Saving and budgeting', source: 'NerdWallet', href: 'https://www.nerdwallet.com/article/finance/nerdwallet-budget-calculator?utm_source=chatgpt.com', time: '6 min read', level: 'Beginner', tone: 'lesson-coral' },
+  { title: 'SEC Nigeria Investor Education', description: 'Explore investment basics, strategies, market risks and investor protection.', category: 'Saving and budgeting', source: 'SEC Nigeria', href: 'https://www.sec.gov.ng/our-mandate/development/investor-education/?utm_source=chatgpt.com', time: '8 min read', level: 'Beginner', tone: 'lesson-green' },
+  { title: 'How to Start Investing', description: "A beginner's guide to getting started and building an investment habit.", category: 'Introduction to investing', source: 'Vanguard', href: 'https://investor.vanguard.com/investor-resources-education/article/how-to-start-investing?utm_source=chatgpt.com', time: '7 min read', level: 'Beginner', tone: 'lesson-blue' },
+  { title: 'Introduction to Investing', description: 'Learn the basics of investing, returns and compound growth.', category: 'Introduction to investing', source: 'Investor.gov', href: 'https://www.investor.gov/introduction-investing?utm_source=chatgpt.com', time: '6 min read', level: 'Beginner', tone: 'lesson-green' },
+  { title: 'Investing Basics: What Are Stocks?', description: 'Understand what stocks are and what it means to own part of a company.', category: 'Understanding stocks', source: 'Charles Schwab', href: 'https://www.schwab.com/learn/story/stock-investing-basics?utm_source=chatgpt.com', time: '5 min read', level: 'Beginner', tone: 'lesson-coral' },
+  { title: 'Stocks: Frequently Asked Questions', description: 'Learn about shares, ownership, dividends and how stocks can generate returns.', category: 'Understanding stocks', source: 'Investor.gov', href: 'https://www.investor.gov/introduction-investing/investing-basics/investment-products/stocks?utm_source=chatgpt.com', time: '5 min read', level: 'Beginner', tone: 'lesson-blue' },
+  { title: 'Asset Allocation and Diversification', description: 'Understand how to balance investments based on your goals and risk tolerance.', category: 'Investment fundamentals', source: 'Investor.gov', href: 'https://www.investor.gov/introduction-investing/getting-started/asset-allocation?utm_source=chatgpt.com', time: '8 min read', level: 'Intermediate', tone: 'lesson-green' },
+  { title: 'What Is Dollar-Cost Averaging?', description: 'Learn about investing consistently instead of trying to predict market movements.', category: 'Investment fundamentals', source: 'Charles Schwab', href: 'https://www.schwab.com/learn/story/what-is-dollar-cost-averaging?utm_source=chatgpt.com', time: '6 min read', level: 'Intermediate', tone: 'lesson-blue' },
+  { title: 'What Is Compound Interest?', description: 'Understand how your returns can generate additional returns over time.', category: 'Growing wealth', source: 'Fidelity', href: 'https://www.fidelity.com/learning-center/trading-investing/compound-interest?utm_source=chatgpt.com', time: '5 min read', level: 'Beginner', tone: 'lesson-coral' },
+  { title: 'What Is a Dividend?', description: 'Learn why some companies distribute part of their earnings to shareholders.', category: 'Growing wealth', source: 'Fidelity', href: 'https://www.fidelity.com/learning-center/smart-money/what-is-a-dividend?utm_source=chatgpt.com', time: '5 min read', level: 'Beginner', tone: 'lesson-green' },
+  { title: 'Known Investment Scams', description: 'Learn to recognise Ponzi schemes, fake platforms and unregistered operators.', category: 'Investor protection', source: 'SEC Nigeria', href: 'https://sec.gov.ng/for-investors/known-investment-scams/?utm_source=chatgpt.com', time: '7 min read', level: 'Essential', tone: 'lesson-coral' },
+  { title: 'How to Avoid Investment Scams', description: 'Identify common fraud tactics, unrealistic promises and pressure-selling techniques.', category: 'Investor protection', source: 'Investor.gov', href: 'https://www.investor.gov/protect-your-investments/fraud/protect-your-money?utm_source=chatgpt.com', time: '6 min read', level: 'Essential', tone: 'lesson-blue' },
 ];
 
 export default function Home() {
@@ -724,16 +715,16 @@ function LearnView({ completed, onComplete }: { completed: boolean; onComplete: 
           <div className="art-note">THE BASICS</div>
         </div>
         <div className="featured-copy">
-          <p className="eyebrow">Featured lesson · 5 min read</p>
+          <p className="eyebrow">Featured lesson · {lessons[4].time}</p>
           <h2>
-            Understanding
+            What are
             <br />
-            the stock market
+            stocks?
           </h2>
-          <p>Stocks, shares, markets, and what it all means for your money. Start here, no jargon necessary.</p>
-          <button className="primary-button" onClick={onComplete}>
+          <p>{lessons[4].description} Start here, no jargon necessary.</p>
+          <a className="primary-button" href={lessons[4].href} target="_blank" rel="noreferrer" onClick={onComplete}>
             {completed ? 'Completed ✓' : 'Start learning'} <span>↗</span>
-          </button>
+          </a>
         </div>
       </div>
       <div className="section-row">
@@ -756,19 +747,19 @@ function LearnView({ completed, onComplete }: { completed: boolean; onComplete: 
         {lessons.map((lesson) => (
           <article className="lesson-card" key={lesson.title}>
             <div className={`lesson-art ${lesson.tone}`}>
-              <span>
-                {lesson.title === 'What are stocks?' ? '◉' : lesson.title === 'Build your emergency fund' ? '▱' : '✦'}
-              </span>
+              <span>{lesson.category === 'Investor protection' ? '!' : lesson.category === 'Growing wealth' ? '✦' : '◉'}</span>
             </div>
             <p className="lesson-category">{lesson.category}</p>
             <h3>{lesson.title}</h3>
+            <p className="lesson-description">{lesson.description}</p>
             <div className="lesson-meta">
               <span>{lesson.time}</span>
               <span>{lesson.level}</span>
+              <span>{lesson.source}</span>
             </div>
-            <button className="lesson-link" onClick={onComplete}>
-              Read lesson →
-            </button>
+            <a className="lesson-link" href={lesson.href} target="_blank" rel="noreferrer" onClick={onComplete}>
+              Read on {lesson.source} →
+            </a>
           </article>
         ))}
       </div>
