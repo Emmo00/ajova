@@ -15,6 +15,40 @@ export type AjoGroup = {
   creator: string;
   status: 'Accepting participants' | 'Active';
   inviteLink: string;
+  payoutAmount: number;
+  payoutStatus: 'not-ready' | 'available' | 'claimed';
+  payoutRecipient: string;
+};
+
+export type Stock = {
+  company: string;
+  ticker: string;
+  price: number;
+  change: string;
+  color: string;
+  mark: string;
+};
+
+export type Holding = Stock & { shares: number; invested: number };
+
+export type InvestmentTransaction = {
+  id: string;
+  company: string;
+  ticker: string;
+  amount: number;
+  shares: number;
+  groupName: string;
+  date: string;
+};
+
+export type PayoutTransaction = {
+  id: string;
+  groupId: string;
+  groupName: string;
+  totalAmount: number;
+  cashAmount: number;
+  investmentAmount: number;
+  date: string;
 };
 
 export const initialGroups: AjoGroup[] = [
@@ -33,6 +67,9 @@ export const initialGroups: AjoGroup[] = [
     creator: 'Amaka Mensah',
     status: 'Active',
     inviteLink: 'https://ajova.app/join/family-ajo',
+    payoutAmount: 0,
+    payoutStatus: 'not-ready',
+    payoutRecipient: 'Amaka Mensah',
   },
   {
     id: 'sunday-circle',
@@ -49,6 +86,28 @@ export const initialGroups: AjoGroup[] = [
     creator: 'Amaka Mensah',
     status: 'Active',
     inviteLink: 'https://ajova.app/join/sunday-circle',
+    payoutAmount: 0,
+    payoutStatus: 'not-ready',
+    payoutRecipient: 'Amaka Mensah',
+  },
+  {
+    id: 'market-women-circle',
+    name: 'Market Women Circle',
+    amount: '₦25,000',
+    amountValue: 25000,
+    members: '10 / 10',
+    round: '8 of 10',
+    date: 'Available now',
+    color: 'teal',
+    position: '8th',
+    schedule: 'Monthly',
+    protectionReserve: 25000,
+    creator: 'Amaka Mensah',
+    status: 'Active',
+    inviteLink: 'https://ajova.app/join/market-women-circle',
+    payoutAmount: 225000,
+    payoutStatus: 'available',
+    payoutRecipient: 'Amaka Mensah',
   },
 ];
 
@@ -57,7 +116,9 @@ export const getStoredGroups = (): AjoGroup[] => {
   const storedGroups = window.localStorage.getItem('ajova-groups');
   if (!storedGroups) return initialGroups;
   try {
-    return JSON.parse(storedGroups) as AjoGroup[];
+    const stored = JSON.parse(storedGroups) as AjoGroup[];
+    const storedById = new Map(stored.map((group) => [group.id, group]));
+    return initialGroups.map((group) => storedById.get(group.id) ?? group).concat(stored.filter((group) => !initialGroups.some((initial) => initial.id === group.id)));
   } catch {
     return initialGroups;
   }
@@ -69,11 +130,22 @@ export const getLinkedGroup = (availableGroups: AjoGroup[]) => {
   return availableGroups.find((group) => group.id === groupId) ?? null;
 };
 
-export const holdings = [
-  { company: 'Apple', ticker: 'AAPL', value: '$428.40', change: '+18.4%', units: '1.58 shares', color: '#1c63d5', mark: 'A' },
-  { company: 'NVIDIA', ticker: 'NVDA', value: '$312.10', change: '+12.7%', units: '1.73 shares', color: '#78b82a', mark: 'N' },
-  { company: 'Tesla', ticker: 'TSLA', value: '$184.70', change: '-2.1%', units: '0.53 shares', color: '#e84343', mark: 'T' },
+export const stockCatalog: Stock[] = [
+  { company: 'Apple', ticker: 'AAPL', price: 270, change: '+1.8%', color: '#1c63d5', mark: 'A' },
+  { company: 'Microsoft', ticker: 'MSFT', price: 505, change: '+0.9%', color: '#4c86c6', mark: 'M' },
+  { company: 'NVIDIA', ticker: 'NVDA', price: 180, change: '+2.4%', color: '#78b82a', mark: 'N' },
+  { company: 'Amazon', ticker: 'AMZN', price: 228, change: '+1.2%', color: '#db8a36', mark: 'a' },
+  { company: 'Tesla', ticker: 'TSLA', price: 350, change: '-0.9%', color: '#e84343', mark: 'T' },
+  { company: 'Google', ticker: 'GOOGL', price: 322, change: '+1.1%', color: '#8a62b4', mark: 'G' },
 ];
+
+export const initialHoldings: Holding[] = stockCatalog.filter((stock) => ['Apple', 'NVIDIA', 'Tesla'].includes(stock.company)).map((stock, index) => ({ ...stock, shares: [1.58, 1.73, 0.53][index], invested: [362, 276, 189][index] }));
+
+export const initialInvestmentHistory: InvestmentTransaction[] = [
+  { id: 'investment-1', company: 'Apple', ticker: 'AAPL', amount: 30000, shares: 1.11, groupName: 'Family Ajo', date: 'Nov 01, 2026' },
+];
+
+export const initialPayoutHistory: PayoutTransaction[] = [];
 
 export const lessons = [
   { title: 'The 50/30/20 Rule', description: 'Learn how to divide income between needs, wants and savings.', category: 'Saving and budgeting', source: 'NerdWallet', href: 'https://www.nerdwallet.com/article/finance/nerdwallet-budget-calculator?utm_source=chatgpt.com', time: '6 min read', level: 'Beginner', tone: 'lesson-coral' },

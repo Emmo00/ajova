@@ -6,8 +6,9 @@ import GroupInviteView from './components/GroupInviteView';
 import InvestView from './components/InvestView';
 import Landing from './components/Landing';
 import LearnView from './components/LearnView';
+import PayoutFlow, { type PayoutResult } from './components/PayoutFlow';
 import SaveView from './components/SaveView';
-import { getLinkedGroup, getStoredGroups, type AjoGroup } from './lib/ajova-data';
+import { getLinkedGroup, getStoredGroups, initialHoldings, initialInvestmentHistory, initialPayoutHistory, type AjoGroup, type Holding, type InvestmentTransaction, type PayoutTransaction } from './lib/ajova-data';
 
 type Tab = 'save' | 'invest' | 'learn';
 
@@ -17,12 +18,16 @@ export default function Home() {
   const [groups, setGroups] = useState<AjoGroup[]>(getStoredGroups);
   const [creationOpen, setCreationOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<AjoGroup | null>(() => getLinkedGroup(getStoredGroups()));
+  const [payoutGroup, setPayoutGroup] = useState<AjoGroup | null>(null);
   const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup');
   const [allocation, setAllocation] = useState(30);
   const [selectedStock, setSelectedStock] = useState('Apple');
   const [completedLesson, setCompletedLesson] = useState(false);
   const [notice, setNotice] = useState('');
   const [isApp, setIsApp] = useState(() => Boolean(getLinkedGroup(getStoredGroups())));
+  const [holdings, setHoldings] = useState<Holding[]>(initialHoldings);
+  const [investmentHistory, setInvestmentHistory] = useState<InvestmentTransaction[]>(initialInvestmentHistory);
+  const [, setPayoutHistory] = useState<PayoutTransaction[]>(initialPayoutHistory);
 
   const flash = (message: string) => {
     setNotice(message);
@@ -44,6 +49,38 @@ export default function Home() {
     setCreationOpen(false);
   };
 
+  const completePayout = (result: PayoutResult) => {
+    const payoutRecord: PayoutTransaction = { id: `payout-${Date.now()}`, groupId: result.groupId, groupName: selectedGroup?.name ?? 'Ajo group', totalAmount: result.payoutAmount, cashAmount: result.cashAmount, investmentAmount: result.investmentAmount, date: 'Today' };
+    setPayoutHistory((currentHistory) => {
+      const nextHistory = [payoutRecord, ...currentHistory];
+      window.localStorage.setItem('ajova-payout-history', JSON.stringify(nextHistory));
+      return nextHistory;
+    });
+    setGroups((currentGroups) => {
+      const nextGroups = currentGroups.map((group) => group.id === result.groupId ? { ...group, payoutStatus: 'claimed' as const } : group);
+      window.localStorage.setItem('ajova-groups', JSON.stringify(nextGroups));
+      const updatedGroup = nextGroups.find((group) => group.id === result.groupId) ?? null;
+      setSelectedGroup(updatedGroup);
+      return nextGroups;
+    });
+    if (result.stock && result.investmentAmount > 0) {
+      const purchasedStock = result.stock;
+      setHoldings((currentHoldings) => {
+        const existing = currentHoldings.find((holding) => holding.ticker === purchasedStock.ticker);
+        const nextHoldings = existing
+          ? currentHoldings.map((holding) => holding.ticker === purchasedStock.ticker ? { ...holding, shares: holding.shares + result.shares, invested: holding.invested + result.investmentAmount } : holding)
+          : [...currentHoldings, { ...purchasedStock, shares: result.shares, invested: result.investmentAmount }];
+        window.localStorage.setItem('ajova-holdings', JSON.stringify(nextHoldings));
+        return nextHoldings;
+      });
+      setInvestmentHistory((currentHistory) => {
+        const nextHistory = [{ id: `payout-${Date.now()}`, company: purchasedStock.company, ticker: purchasedStock.ticker, amount: result.investmentAmount, shares: result.shares, groupName: selectedGroup?.name ?? 'Ajo group', date: 'Today' }, ...currentHistory];
+        window.localStorage.setItem('ajova-investment-history', JSON.stringify(nextHistory));
+        return nextHistory;
+      });
+    }
+  };
+
   if (!isApp) {
     return <Landing showAuth={showAuth} setShowAuth={setShowAuth} authMode={authMode} setAuthMode={setAuthMode} enterApp={enterApp} />;
   }
@@ -51,7 +88,8 @@ export default function Home() {
   const selectTab = (nextTab: Tab) => {
     setTab(nextTab);
     setSelectedGroup(null);
+    setPayoutGroup(null);
   };
 
-  return <main className="app-shell"><aside className="side-nav"><button className="brand side-brand" aria-label="Ajova" onClick={() => setIsApp(false)} /><div className="side-label">YOUR MONEY</div><button className={`side-link ${tab === 'save' ? 'active' : ''}`} onClick={() => selectTab('save')}><span>◒</span> Save</button><button className={`side-link ${tab === 'invest' ? 'active' : ''}`} onClick={() => selectTab('invest')}><span>↗</span> Invest</button><button className={`side-link ${tab === 'learn' ? 'active' : ''}`} onClick={() => selectTab('learn')}><span>✦</span> Learn</button><div className="side-bottom"><button className="side-link"><span>?</span> Help center</button><button className="profile-mini" onClick={() => flash('Profile settings are coming next.')}><span className="avatar">AM</span><span><b>Amaka Mensah</b><small>Personal account</small></span><i>•••</i></button></div></aside><div className="app-content"><header className="app-header"><div className="mobile-brand brand" aria-label="Ajova" /><div className="breadcrumb">{tab === 'save' ? 'Savings' : tab === 'invest' ? 'Investments' : 'Learn'}<span> / </span><b>{tab === 'save' ? 'Overview' : tab === 'invest' ? 'My portfolio' : 'For you'}</b></div><div className="header-actions"><button className="icon-button" onClick={() => flash('You’re all caught up.')} aria-label="Notifications">♧<span className="notification-dot" /></button><button className="avatar header-avatar" onClick={() => flash('Profile settings are coming next.')}>AM</button></div></header>{selectedGroup ? <GroupInviteView group={selectedGroup} onBack={() => setSelectedGroup(null)} onNotice={flash} /> : tab === 'save' ? <SaveView groups={groups} onCreate={() => setCreationOpen(true)} onOpenGroup={setSelectedGroup} onNotice={flash} /> : tab === 'invest' ? <InvestView allocation={allocation} setAllocation={setAllocation} selectedStock={selectedStock} setSelectedStock={setSelectedStock} onNotice={flash} /> : <LearnView completed={completedLesson} onComplete={() => { setCompletedLesson(true); flash('Lesson marked complete.'); }} />}</div>{notice && <div className="toast">{notice}</div>}{creationOpen && <CreateAjoFlow onClose={() => setCreationOpen(false)} onCreated={createGroup} />}</main>;
+  return <main className="app-shell"><aside className="side-nav"><button className="brand side-brand" aria-label="Ajova" onClick={() => setIsApp(false)} /><div className="side-label">YOUR MONEY</div><button className={`side-link ${tab === 'save' ? 'active' : ''}`} onClick={() => selectTab('save')}><span>◒</span> Save</button><button className={`side-link ${tab === 'invest' ? 'active' : ''}`} onClick={() => selectTab('invest')}><span>↗</span> Invest</button><button className={`side-link ${tab === 'learn' ? 'active' : ''}`} onClick={() => selectTab('learn')}><span>✦</span> Learn</button><div className="side-bottom"><button className="side-link"><span>?</span> Help center</button><button className="profile-mini" onClick={() => flash('Profile settings are coming next.')}><span className="avatar">AM</span><span><b>Amaka Mensah</b><small>Personal account</small></span><i>•••</i></button></div></aside><div className="app-content"><header className="app-header"><div className="mobile-brand brand" aria-label="Ajova" /><div className="breadcrumb">{tab === 'save' ? 'Savings' : tab === 'invest' ? 'Investments' : 'Learn'}<span> / </span><b>{tab === 'save' ? 'Overview' : tab === 'invest' ? 'My portfolio' : 'For you'}</b></div><div className="header-actions"><button className="icon-button" onClick={() => flash('You’re all caught up.')} aria-label="Notifications">♧<span className="notification-dot" /></button><button className="avatar header-avatar" onClick={() => flash('Profile settings are coming next.')}>AM</button></div></header>{selectedGroup ? <GroupInviteView group={selectedGroup} onBack={() => setSelectedGroup(null)} onClaimPayout={() => setPayoutGroup(selectedGroup.payoutStatus === 'available' ? selectedGroup : null)} onNotice={flash} /> : tab === 'save' ? <SaveView groups={groups} onCreate={() => setCreationOpen(true)} onOpenGroup={setSelectedGroup} onNotice={flash} /> : tab === 'invest' ? <InvestView holdings={holdings} investmentHistory={investmentHistory} allocation={allocation} setAllocation={setAllocation} selectedStock={selectedStock} setSelectedStock={setSelectedStock} onNotice={flash} /> : <LearnView completed={completedLesson} onComplete={() => { setCompletedLesson(true); flash('Lesson marked complete.'); }} />}</div>{notice && <div className="toast">{notice}</div>}{creationOpen && <CreateAjoFlow onClose={() => setCreationOpen(false)} onCreated={createGroup} />}{payoutGroup && <PayoutFlow group={payoutGroup} onClose={() => setPayoutGroup(null)} onComplete={completePayout} onViewInvestments={() => { setPayoutGroup(null); setSelectedGroup(null); setTab('invest'); }} />}</main>;
 }
